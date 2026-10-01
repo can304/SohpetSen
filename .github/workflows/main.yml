@@ -20,7 +20,7 @@ jobs:
       - name: ZIP dosyasını aç
         run: |
           mkdir -p build_project
-          unzip -o SohpetSen_v2.5.1.zip -d build_project
+          unzip -o "$(find . -maxdepth 3 -type f -iname '*.zip' | head -1)" -d build_project -d build_project
 
       - name: Gradle projesini bul
         run: |
