@@ -1,12 +1,60 @@
-name: SohpetSen Test
+name: SohpetSen APK
 
 on:
   workflow_dispatch:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test
-        run: echo "SohpetSen çalışıyor!"
+      - name: GitHub deposunu al
+        uses: actions/checkout@v4
+
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: ZIP dosyasını bul ve aç
+        run: |
+          ZIP_FILE=$(find . -maxdepth 3 -type f -iname 'SohpetSen_v2.5-1.zip' | head -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "SohpetSen_v2.5-1.zip bulunamadı."
+            echo "Depodaki ZIP dosyaları:"
+            find . -type f -iname '*.zip'
+            exit 1
+          fi
+
+          echo "Bulunan ZIP: $ZIP_FILE"
+          mkdir -p build_project
+          unzip -o "$ZIP_FILE" -d build_project
+
+      - name: Gradle dosyasını bul
+        run: |
+          GRADLEW=$(find build_project -type f -name gradlew | head -n 1)
+
+          if [ -z "$GRADLEW" ]; then
+            echo "gradlew bulunamadı."
+            find build_project -maxdepth 4 -type f | head -100
+            exit 1
+          fi
+
+          echo "Bulunan Gradle: $GRADLEW"
+          chmod +x "$GRADLEW"
+          echo "GRADLEW=$GRADLEW" >> "$GITHUB_ENV"
+
+      - name: Android APK oluştur
+        run: |
+          cd "$(dirname "$GRADLEW")"
+          ./gradlew assembleDebug --stacktrace
+
+      - name: APK dosyasını yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: SohpetSen-APK
+          path: |
+            build_project/**/*.apk
+            !build_project/**/build/outputs/logs/**
