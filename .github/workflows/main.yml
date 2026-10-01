@@ -17,9 +17,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Android SDK kur
-        uses: android-actions/setup-android@v3
-
       - name: ZIP dosyasını aç
         run: |
           mkdir -p build_project
@@ -28,7 +25,7 @@ jobs:
       - name: Gradle projesini bul
         run: |
           PROJECT_DIR=$(dirname "$(find build_project -type f -name gradlew | head -1)")
-          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           chmod +x "$PROJECT_DIR/gradlew"
 
       - name: APK oluştur
