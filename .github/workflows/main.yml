@@ -1,60 +1,39 @@
-name: SohpetSen APK
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: GitHub deposunu al
-        uses: actions/checkout@v4
-
-      - name: Java 17 kur
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: ZIP dosyasını bul ve aç
+      - name: Gradle dosyalarını bul
         run: |
-          ZIP_FILE=$(find . -maxdepth 3 -type f -iname 'SohpetSen_v2.5-1.zip' | head -n 1)
-
-          if [ -z "$ZIP_FILE" ]; then
-            echo "SohpetSen_v2.5-1.zip bulunamadı."
-            echo "Depodaki ZIP dosyaları:"
-            find . -type f -iname '*.zip'
-            exit 1
-          fi
-
-          echo "Bulunan ZIP: $ZIP_FILE"
-          mkdir -p build_project
-          unzip -o "$ZIP_FILE" -d build_project
-
-      - name: Gradle dosyasını bul
-        run: |
-          GRADLEW=$(find build_project -type f -name gradlew | head -n 1)
+          GRADLEW=$(find build_project -type f -name "gradlew" | head -n 1)
 
           if [ -z "$GRADLEW" ]; then
             echo "gradlew bulunamadı."
-            find build_project -maxdepth 4 -type f | head -100
+            echo "Gradle dosyaları:"
+            find build_project -maxdepth 4 -type f \( -name "build.gradle" -o -name "build.gradle.kts" -o -name "gradlew" \)
             exit 1
           fi
 
           echo "Bulunan Gradle: $GRADLEW"
           chmod +x "$GRADLEW"
-          echo "GRADLEW=$GRADLEW" >> "$GITHUB_ENV"
 
-      - name: Android APK oluştur
+          PROJECT_DIR=$(dirname "$GRADLEW")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: APK oluştur
         run: |
-          cd "$(dirname "$GRADLEW")"
+          cd "$PROJECT_DIR"
           ./gradlew assembleDebug --stacktrace
 
-      - name: APK dosyasını yükle
+      - name: APK dosyasını bul
+        run: |
+          APK=$(find "$PROJECT_DIR" -type f -name "*.apk" | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "APK oluşturulamadı."
+            exit 1
+          fi
+
+          echo "Bulunan APK: $APK"
+          cp "$APK" "$GITHUB_WORKSPACE/SohpetSen.apk"
+
+      - name: APK yükle
         uses: actions/upload-artifact@v4
         with:
           name: SohpetSen-APK
-          path: |
-            build_project/**/*.apk
-            !build_project/**/build/outputs/logs/**
+          path: SohpetSen.apk
